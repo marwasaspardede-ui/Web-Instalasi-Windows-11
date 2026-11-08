@@ -1,0 +1,581 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Simulasi Instalasi Windows 11</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: kartu panggung 3D (monitor, keyboard, casing PC) di kiri, pemandu suara dan daftar tahap di kanan. Layar virtual memakai palet tetap agar mirip Windows asli di tema apa pun. */
+:root{
+  --bg:#eef3fb; --card:#ffffff; --ink:#10203a; --mut:#546179; --line:#d5deee; --soft:#f0f4fb;
+  --c0:#2563eb; --c1:#d97706; --c2:#7c3aed; --c3:#db2777; --c4:#0d9488;
+  --d0:#1d4ed8; --d1:#b45309; --d2:#6d28d9; --d3:#be185d; --d4:#0f766e; --d5:#15803d;
+  --btn:#2563eb; --btn-ink:#ffffff; --ok:#15803d; --warn-bg:#fff0dc; --warn:#a64b00;
+  --f-d:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-b:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#070c17; --card:#101a2e; --ink:#e8eefb; --mut:#9aa8c2; --line:#25344f; --soft:#17233d;
+  --c0:#6ea2ff; --c1:#fbbf24; --c2:#a78bfa; --c3:#f472b6; --c4:#2dd4bf;
+  --btn:#6ea2ff; --btn-ink:#07142b; --ok:#4ade80; --warn-bg:#3a2410; --warn:#fdba74; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#070c17; --card:#101a2e; --ink:#e8eefb; --mut:#9aa8c2; --line:#25344f; --soft:#17233d;
+  --c0:#6ea2ff; --c1:#fbbf24; --c2:#a78bfa; --c3:#f472b6; --c4:#2dd4bf;
+  --btn:#6ea2ff; --btn-ink:#07142b; --ok:#4ade80; --warn-bg:#3a2410; --warn:#fdba74; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;color:var(--ink);font:16px/1.55 var(--f-b);min-height:100vh;
+  background:radial-gradient(800px 480px at 90% -8%,color-mix(in srgb,var(--c2) 26%,transparent),transparent),radial-gradient(700px 420px at -6% 28%,color-mix(in srgb,var(--c0) 22%,transparent),transparent),radial-gradient(600px 400px at 60% 105%,color-mix(in srgb,var(--c3) 16%,transparent),transparent),var(--bg)}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--c0);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-d);line-height:1.12;text-wrap:balance;margin:0}
+.wrap{max-width:72rem;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+.hero{display:flex;flex-wrap:wrap;gap:14px 24px;justify-content:space-between;align-items:center;padding:clamp(16px,3vw,26px) clamp(16px,3vw,30px);border-radius:20px;color:#fff;margin-bottom:18px;background:radial-gradient(500px 220px at 100% 0,#f472b655,transparent),radial-gradient(420px 220px at 0 120%,#22d3ee44,transparent),linear-gradient(115deg,#1d4ed8,#6d28d9 58%,#be185d)}
+.hero>div{min-width:0;flex:1 1 20rem}
+.eb{font:700 .75rem/1 var(--f-b);letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.hero h1{font-size:clamp(1.6rem,4vw,2.35rem);font-weight:800;margin:8px 0 6px;letter-spacing:-.015em}
+.hero p{margin:0;max-width:52ch;opacity:.93}
+.gbtn{border:2px solid #ffffffaa;background:#ffffff1f;color:#fff;border-radius:12px;padding:.55rem 1.1rem;font-weight:700}
+.gbtn:hover{background:#ffffff38}
+.gbtn:focus-visible{outline-color:#fff}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;position:relative;min-width:0}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+.bn{--bnc:var(--d0);background:var(--bnc);color:#fff;border-radius:14px;padding:12px 16px 14px;margin-bottom:14px;transition:background .4s}
+.bt{font:700 .75rem/1.2 var(--f-b);letter-spacing:.12em;text-transform:uppercase;opacity:.88;margin-bottom:4px}
+.cap{margin:0;font:700 1.12rem/1.45 var(--f-d)}
+.cap .w,.gy .w{border-radius:5px;padding:0 .1em;transition:background .1s}
+.cap .w.on{background:#ffffff40;box-shadow:0 0 0 2px #ffffff40}
+.gy .w.on{background:color-mix(in srgb,var(--c2) 24%,transparent)}
+
+/* panggung 3D */
+.scene{perspective:1400px;position:relative;padding:6px 0 84px}
+.rig{transform-style:preserve-3d;transform:rotateX(4deg) rotateY(-5deg);transition:transform .12s ease-out}
+.desk{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,.75fr);grid-template-areas:"mon tow" "kb tow";gap:16px 18px;align-items:end;padding:18px;border-radius:18px;background:linear-gradient(#27334a,#121a29);box-shadow:0 30px 50px rgba(0,0,0,.35);transform-style:preserve-3d}
+@media (max-width:640px){.desk{grid-template-columns:1fr 1fr;grid-template-areas:"mon mon" "kb tow";padding:12px}}
+.mon{grid-area:mon;position:relative;background:#0b1018;padding:12px;border-radius:14px;box-shadow:0 0 0 2px #2b3a52 inset,0 18px 30px rgba(0,0,0,.4);margin-bottom:20px;transform:translateZ(20px)}
+.mon:after{content:"";position:absolute;left:38%;right:38%;bottom:-20px;height:20px;background:linear-gradient(#2d394a,#18202b);border-radius:0 0 8px 8px}
+.scrw{position:relative;overflow:hidden;border-radius:4px;background:#000;width:100%}
+.kb{grid-area:kb;height:50px;border-radius:7px;background:repeating-linear-gradient(90deg,transparent 0 17px,#0e141c 17px 19px),repeating-linear-gradient(0deg,transparent 0 13px,#0e141c 13px 15px),#33415a;transform:translateZ(30px);box-shadow:0 8px 14px rgba(0,0,0,.4)}
+.tow{grid-area:tow;align-self:stretch;min-height:230px;border-radius:12px;position:relative;background:linear-gradient(160deg,#2f3b50,#0f141c);box-shadow:inset 0 0 0 2px #3a475d,0 14px 30px rgba(0,0,0,.45);transform:translateZ(46px)}
+.tow:before{content:"";position:absolute;left:7px;top:12px;bottom:12px;width:4px;border-radius:2px;background:linear-gradient(#22d3ee,#a78bfa,#f472b6,#fbbf24);opacity:.22}
+.tow.on:before{opacity:1;box-shadow:0 0 14px #a78bfa}
+.pbt{position:absolute;top:16px;left:50%;margin-left:-19px;width:38px;height:38px;border-radius:50%;border:3px solid #6b7b94;background:#151c26;color:#9fb0c8;font-size:18px;padding:0}
+.pbt:before{content:"\23FB"}
+.pled{position:absolute;top:64px;left:50%;margin-left:-4px;width:8px;height:8px;border-radius:50%;background:#3a4452}
+.pled.on{background:#22e06b;box-shadow:0 0 10px #22e06b}
+.bay{position:absolute;left:16px;right:16px;top:92px;height:14px;background:#0a0f16;border-radius:3px}.b2{top:114px}
+.port{position:absolute;left:50%;margin-left:-34px;bottom:24px;width:68px;height:24px;background:#04070b;border:2px solid #6b7b94;border-radius:4px;display:grid;place-items:center;color:#9db0ca;font-size:11px;font-weight:700;padding:0;font-family:inherit}
+.port.pl{background:#1f9d55;border-color:#22e06b;color:#fff}
+.usb{position:absolute;left:5%;bottom:16px;width:100px;height:38px;border:0;border-radius:6px 10px 10px 6px;background:linear-gradient(135deg,#fde68a,#f59e0b 55%,#ef4444);color:#2b1400;font-weight:700;font-size:.8rem;box-shadow:0 12px 18px rgba(0,0,0,.45);touch-action:none;cursor:grab;transition:left .3s,top .3s,opacity .5s;z-index:6;user-select:none}
+.usb:before{content:"";position:absolute;left:-17px;top:8px;width:19px;height:22px;background:#c4ccd8;border-radius:2px}
+.usb.dg{transition:none;cursor:grabbing;transform:scale(1.08) rotate(-6deg)}
+.usb.in{opacity:0;pointer-events:none}
+.act{animation:pl 1.3s infinite}
+@keyframes pl{50%{box-shadow:0 0 0 9px color-mix(in srgb,#22d3ee 60%,transparent)}}
+
+/* layar virtual */
+.scr{position:absolute;left:0;top:0;width:640px;height:420px;transform-origin:0 0;transform:scale(var(--k,1));font:17px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;overflow:hidden;color:#1b1b1b}
+.dlg h2{margin:0 0 10px;font:600 22px/1.2 "Segoe UI",system-ui,sans-serif}.dlg p{margin:6px 0}
+.sm{font-size:14px;opacity:.8}
+.m-off{background:#04060a}
+.m-post{background:#000;color:#d4d4d4;font-family:ui-monospace,Consolas,monospace}.m-post .dlg{padding:26px}
+.logo{display:inline-block;font:800 20px/1 ui-monospace,Consolas,monospace;padding:6px 12px;border-radius:4px;background:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6);color:#000;margin-bottom:12px}
+.m-bios{background:#1a3b94;color:#fff;font-family:ui-monospace,Consolas,monospace}.m-bios .dlg{padding:20px 26px}
+.m-bios h2{color:#fde047;font-family:ui-monospace,Consolas,monospace}
+.m-setup{background:radial-gradient(circle at 15% 15%,#60a5fa 0,transparent 45%),radial-gradient(circle at 88% 85%,#c084fc 0,transparent 45%),radial-gradient(circle at 75% 12%,#22d3ee 0,transparent 40%),#0b3a8f}
+.m-setup .dlg{position:absolute;inset:28px 40px;background:#f7f9fc;color:#1b1b1b;border-radius:10px;padding:22px 26px;box-shadow:0 14px 40px rgba(0,0,0,.4)}
+.m-setup .dlg:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(90deg,#2563eb,#22d3ee,#a78bfa,#f472b6);border-radius:10px 10px 0 0}
+.m-oobe,.m-hi{background:radial-gradient(circle at 14% 20%,#7c3aed 0,transparent 46%),radial-gradient(circle at 88% 78%,#06b6d4 0,transparent 45%),radial-gradient(circle at 62% 8%,#ec4899 0,transparent 36%),#14123a}
+.m-oobe .dlg{position:absolute;inset:26px 44px;color:#fff}
+.m-hi .dlg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:0 40px}
+.m-hi .big{font:600 44px/1.1 "Segoe UI",system-ui,sans-serif;margin:0 0 4px}
+.m-desk,.m-win{background:radial-gradient(circle at 78% 24%,#7dd3fc 0,transparent 38%),radial-gradient(circle at 24% 78%,#c084fc 0,transparent 44%),radial-gradient(circle at 62% 94%,#f472b6 0,transparent 40%),radial-gradient(circle at 30% 20%,#2563eb 0,transparent 50%),#0b2f78}
+.m-win .dlg{position:absolute;inset:24px 46px 58px;background:#fff;color:#1b1b1b;border-radius:10px;padding:16px 22px;box-shadow:0 12px 36px rgba(0,0,0,.4);overflow:hidden}
+.m-win .dlg:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(90deg,#0d9488,#22d3ee,#2563eb)}
+.m-desk .dlg{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#fff}
+.dlg h2:before{content:"";display:inline-block;width:22px;height:22px;margin-right:10px;vertical-align:-4px;background:linear-gradient(90deg,#4cc2ff 0 47%,transparent 47% 53%,#0a6fd6 53%) top/100% 47% no-repeat,linear-gradient(90deg,#0a6fd6 0 47%,transparent 47% 53%,#4cc2ff 53%) bottom/100% 47% no-repeat}
+.m-post .dlg h2:before,.m-bios .dlg h2:before,.m-desk .dlg h2:before{display:none}
+.tbar{position:absolute;left:0;right:0;bottom:0;height:42px;background:rgba(18,26,44,.84);display:flex;justify-content:center;align-items:center;gap:10px;z-index:4}
+.tbar i{width:22px;height:22px;border-radius:6px;background:#4cc2ff}.tbar i.a{background:#fbbf24}.tbar i.b{background:#4ade80}.tbar i.c{background:#f472b6}.tbar i.d{background:#a78bfa}
+.tst{width:26px;height:26px;border:0;padding:0;background:linear-gradient(90deg,#4cc2ff 0 47%,transparent 47% 53%,#0a6fd6 53%) top/100% 47% no-repeat,linear-gradient(90deg,#0a6fd6 0 47%,transparent 47% 53%,#4cc2ff 53%) bottom/100% 47% no-repeat;border-radius:2px;cursor:pointer}
+.clk{position:absolute;right:12px;top:4px;color:#fff;font-size:11px;line-height:1.25;text-align:right}
+.o{display:flex;width:100%;gap:10px;align-items:center;text-align:left;margin:6px 0;padding:8px 12px;border-radius:8px;font-size:15px;border:1px solid #c8d0db;background:#fff;color:#1b1b1b}
+.m-oobe .o{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);color:#fff}
+.m-bios .o{background:#0e2870;border-color:#7da2ff;color:#fff;border-radius:2px;justify-content:space-between}
+.o:before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid currentColor;flex:none;opacity:.6}
+.m-bios .o:before{display:none}
+.o.s{border-color:#7c3aed;box-shadow:inset 0 0 0 1px #7c3aed;background:#f1eaff}.o.s:before{background:currentColor;opacity:1}
+.m-oobe .o.s{background:rgba(255,255,255,.28);border-color:#fff;box-shadow:inset 0 0 0 1px #fff}
+.m-win .o.s{background:#e0f7f3;border-color:#0d9488;box-shadow:inset 0 0 0 1px #0d9488}
+.mv{border:1px solid #fde047;background:#274bb8;color:#fff;border-radius:3px;padding:2px 8px;font-size:14px}
+.nb{position:absolute;right:26px;bottom:18px;border:0;background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;padding:9px 26px;border-radius:6px;font-size:16px;box-shadow:0 4px 12px rgba(37,99,235,.45)}
+.m-post .nb,.m-bios .nb{border-radius:2px;background:#e2e2e2;color:#000;font-family:inherit;box-shadow:none}
+.m-oobe .nb{right:0;bottom:0}
+.inp{width:100%;padding:9px 12px;font-size:16px;border-radius:6px;border:1px solid #a99bd6;margin-top:8px;background:#fff;color:#111}
+.pb{height:9px;background:#d3dae4;border-radius:5px;overflow:hidden;margin:18px 0 8px}.pb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#a78bfa,#f472b6)}
+.m-hi .pb{background:rgba(255,255,255,.25);width:260px;margin:18px auto 8px}.m-hi .pb i{background:#fff}
+.m-oobe .pb{background:rgba(255,255,255,.25)}
+.m-post .pb{background:#333}
+.m-post .o{display:inline-flex;width:auto;margin:6px 8px 0 0;padding:5px 12px;border-radius:2px;background:#111;border-color:#777;color:#ddd;font-family:inherit;font-size:14px}
+.m-post .o.s{background:#e2e2e2;color:#000;border-color:#e2e2e2;box-shadow:none}
+.m-post .o:before{display:none}
+.btabs{display:flex;flex-wrap:wrap;gap:2px;margin:0 0 12px;background:#06134f}
+.btabs button{border:0;background:transparent;color:#c9d6ff;padding:5px 14px;font:inherit;font-size:14px}
+.btabs button.s{background:#d6dcf0;color:#0a1f7a}
+.m-bios .f{font-size:14px;padding:6px 0;border-color:#7da2ff66}.m-bios .f span{color:#c9d6ff}
+.m-bios h2{font-size:18px;margin-bottom:6px}
+.m-bios .o.s{background:#d6dcf0;color:#0a1f7a;box-shadow:none}
+.m-loading{background:#000;color:#fff}
+.m-loading .dlg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 40px}
+.m-loading .pb{width:240px;background:#333}
+.m-loading .pb i{background:#fff}
+.wlogo{width:84px;height:84px;margin-bottom:18px;background:linear-gradient(90deg,#4cc2ff 0 47%,transparent 47% 53%,#0a6fd6 53%) top/100% 47% no-repeat,linear-gradient(90deg,#0a6fd6 0 47%,transparent 47% 53%,#4cc2ff 53%) bottom/100% 47% no-repeat}
+.f{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #dde3ec;padding:9px 0;font-size:16px}.f span{color:#555}
+.rq{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.rq div{display:flex;align-items:center;gap:10px;background:#f3f6fc;border-radius:10px;padding:9px 11px;font-size:14px;line-height:1.25}
+.rq i{font:700 18px/1 "Segoe UI",sans-serif;font-style:normal;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;background:var(--k);flex:none}
+.rq b{display:block;font-size:15px}.rq span{color:#555;font-size:12px}
+.ic{position:absolute;left:18px;top:18px;display:grid;gap:14px;color:#fff;font-size:12px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.ic b{display:block;width:40px;height:40px;border-radius:10px;margin:0 auto 3px;box-shadow:0 4px 8px rgba(0,0,0,.3)}
+.wl{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.5);border-radius:18px;padding:20px 30px;color:#fff;box-shadow:0 14px 40px rgba(0,0,0,.3);backdrop-filter:blur(4px)}
+.wl h2{font-size:28px;margin:0 0 6px}
+.ck{list-style:none;padding:0;margin:10px 0 0}.ck li{padding:6px 12px;font-size:15px;background:rgba(255,255,255,.2);border-radius:8px;margin:5px 0;text-align:left}.ck li:before{content:"\2713";color:#a7f3d0;font-weight:700;margin-right:10px}
+.smn{position:absolute;left:50%;bottom:50px;transform:translateX(-50%);width:340px;background:rgba(246,248,253,.96);color:#1b1b1b;border-radius:14px;padding:14px 14px 10px;box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:5}
+.smn h3{font:600 13px "Segoe UI",sans-serif;margin:0 0 8px;color:#555}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;font-size:11px;text-align:center}
+.tiles b{display:block;height:36px;border-radius:9px;margin-bottom:3px}
+.sf{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #d9dfeb;padding-top:8px;font-size:14px}
+.sf em{font-style:normal;width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;margin-right:8px;font-size:13px}
+
+/* kartu samping */
+.nh{display:flex;gap:12px;align-items:center}
+.av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--c0),var(--c2),var(--c3));flex:none}
+.wave{display:flex;gap:3px;align-items:center;height:22px}
+.wave i{display:block;width:4px;height:6px;border-radius:2px;background:#fff}
+.nar.sp .wave i{animation:wv .8s ease-in-out infinite}
+.nar.sp .wave i:nth-child(2){animation-delay:.15s}.nar.sp .wave i:nth-child(3){animation-delay:.3s}.nar.sp .wave i:nth-child(4){animation-delay:.45s}
+@keyframes wv{50%{height:20px}}
+.gn{color:var(--mut);font-size:.85rem}
+.nh b{font:800 1.15rem var(--f-d)}
+.lab{font:700 .72rem/1 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin:14px 0 6px}
+.gy{margin:0;font-size:1.02rem}
+.gh{margin-top:12px;padding:9px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:.95rem}
+.sk{animation:sk .35s}@keyframes sk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pbtn{border:0;border-radius:10px;padding:.55rem 1rem;font-weight:700;background:var(--btn);color:var(--btn-ink)}
+.pbtn:hover{filter:brightness(1.08)}
+.obtn{border:2px solid var(--line);background:var(--card);border-radius:10px;padding:.5rem .9rem;font-weight:700}
+.obtn[aria-pressed="true"]{border-color:var(--c4);color:var(--c4)}
+.spd{display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap;font-size:.88rem;color:var(--mut)}
+.spd button{border:2px solid var(--line);background:var(--card);border-radius:99px;padding:.2rem .8rem;font-weight:700;font-size:.85rem}
+.spd button[aria-pressed="true"]{border-color:var(--c2);color:var(--c2)}
+.vn{margin:10px 0 0;font-size:.85rem;color:var(--mut)}
+.top5{display:flex;gap:14px;align-items:center}
+.ring{--pc:0;--rc:var(--c0);width:70px;height:70px;border-radius:50%;background:conic-gradient(var(--rc) calc(var(--pc)*1%),var(--line) 0);display:grid;place-items:center;flex:none}
+.ring b{width:52px;height:52px;border-radius:50%;background:var(--card);display:grid;place-items:center;font:800 .95rem var(--f-d)}
+.ph{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.ph li{display:flex;gap:10px;align-items:center;color:var(--mut);padding:.35rem .6rem;border-radius:10px}
+.ph i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:none}
+.ph li.d{color:var(--ink)}.ph li.d i{background:var(--k);border-color:var(--k)}
+.ph li.n{color:var(--ink);font-weight:700;background:color-mix(in srgb,var(--k) 16%,transparent)}.ph li.n i{background:var(--k);border-color:var(--k);box-shadow:0 0 0 4px color-mix(in srgb,var(--k) 28%,transparent)}
+.fin{border:2px solid var(--ok);background:linear-gradient(160deg,color-mix(in srgb,var(--c4) 16%,var(--card)),var(--card) 60%)}
+.fin h2{font-size:1.6rem;font-weight:800}
+.fin p{margin:6px 0 0}
+.st{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.st div{background:var(--soft);border-radius:12px;padding:.6rem .4rem;text-align:center}
+.st b{display:block;font:800 1.35rem var(--f-d)}
+.st span{font-size:.78rem;color:var(--mut)}
+.badge{display:inline-block;margin-top:8px;padding:.2rem .8rem;border-radius:99px;background:var(--d5);color:#fff;font-weight:700;font-size:.88rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chips span{font-size:.82rem;font-weight:700;padding:.15rem .7rem;border-radius:99px;background:color-mix(in srgb,var(--k) 18%,transparent);color:var(--ink)}
+.intro{position:absolute;inset:0;border-radius:20px;z-index:12;display:grid;place-items:center;padding:20px;text-align:center;background:linear-gradient(160deg,color-mix(in srgb,var(--card) 90%,transparent),color-mix(in srgb,var(--card) 96%,transparent));backdrop-filter:blur(6px)}
+.intro>div{max-width:30rem;display:flex;flex-direction:column;align-items:center;gap:14px}
+.intro h2{font-size:clamp(1.5rem,4vw,2.1rem);font-weight:800}
+.intro p{margin:0;color:var(--mut)}
+.intro .ctl{justify-content:center;margin:0}
+.big{border:0;border-radius:14px;padding:.85rem 1.6rem;font:800 1.1rem var(--f-d);background:linear-gradient(90deg,#2563eb,#7c3aed,#db2777);color:#fff;box-shadow:0 10px 24px rgba(109,40,217,.4)}
+.big:hover{filter:brightness(1.08)}
+.big.alt{background:var(--card);color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.cf{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:9;border-radius:20px}
+.cf i{position:absolute;top:-16px;width:9px;height:15px;border-radius:2px;animation:fall var(--d) linear var(--dl) forwards}
+@keyframes fall{to{transform:translateY(760px) rotate(var(--r));opacity:.9}}
+@media (prefers-reduced-motion:reduce){.act,.nar.sp .wave i{animation:none}.act{outline:3px solid #22d3ee}.rig{transition:none}}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div><span class="eb">Modul praktik · Kelas X</span><h1>Simulasi Instalasi Windows 11</h1><p>Pasang Windows 11 dari nol di komputer virtual. Dengarkan pemandu suara, lalu ikuti langkahnya satu per satu sampai komputer barumu menyala.</p></div>
+  <button class="gbtn" id="rst" type="button">Mulai ulang</button>
+</header>
+<div class="grid">
+  <section class="card" id="stage">
+    <div class="bn" id="bn"><div class="bt" id="bt"></div><p class="cap" id="cap"></p></div>
+    <div class="scene" id="sc">
+      <div class="rig" id="rig"><div class="desk">
+        <div class="mon" id="mon"><div class="scrw" id="scrw"><div class="scr" id="scr"></div></div></div>
+        <div class="kb"></div>
+        <div class="tow" id="tow"><div class="bay"></div><div class="bay b2"></div><button class="pbt" id="pw" type="button" aria-label="Tombol power PC"></button><span class="pled" id="pled"></span><button class="port" id="port" type="button" aria-label="Port USB">USB</button></div>
+      </div></div>
+      <button class="usb" id="usb" type="button" aria-label="Flashdisk bootable Windows 11">Win11</button>
+    </div>
+    <div class="cf" id="cf" aria-hidden="true"></div>
+    <div class="intro" id="intro"><div>
+      <h2>Siap memasang Windows 11</h2>
+      <p>Simulasi ini punya pemandu suara yang membacakan setiap instruksi. Naikkan volume atau pakai headphone, lalu tekan mulai.</p>
+      <div class="ctl"><button class="big" id="go1" type="button">Mulai dengan suara</button><button class="big alt" id="go0" type="button">Mulai tanpa suara</button></div>
+      <p class="sm" id="introNote" style="font-size:.88rem"></p>
+    </div></div>
+  </section>
+  <aside class="side">
+    <div class="card fin" id="fin" hidden></div>
+    <div class="card nar" id="nar">
+      <div class="nh"><div class="av"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div><div><div class="gn" id="gn"></div><b>Pemandu suara</b></div></div>
+      <div class="lab">Kenapa begitu</div><p class="gy" id="gy"></p>
+      <div class="gh" id="gh" role="alert" hidden></div>
+      <div class="ctl"><button class="pbtn" id="rep" type="button">Dengarkan lagi</button><button class="obtn" id="snd" type="button" aria-pressed="false">Suara: mati</button></div>
+      <div class="spd" role="group" aria-label="Kecepatan suara"><span>Kecepatan</span><button type="button" data-r="0.8" aria-pressed="false">Pelan</button><button type="button" data-r="1" aria-pressed="true">Normal</button><button type="button" data-r="1.2" aria-pressed="false">Cepat</button></div>
+      <p class="vn" id="vn"></p>
+    </div>
+    <div class="card"><div class="top5"><div class="ring" id="ring"><b id="pc">0%</b></div><div><b style="font:800 1.1rem var(--f-d)">Kemajuan</b><div class="gn" id="gn2"></div></div></div><ul class="ph" id="ph"></ul></div>
+  </aside>
+</div>
+</div>
+<noscript><p style="padding:16px">Modul ini membutuhkan JavaScript agar simulasinya dapat berjalan.</p></noscript>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var esc=function(t){return String(t).replace(/[&<>"']/g,function(x){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]})};
+var val=function(x){return typeof x==='function'?x():x};
+var PH=[{n:'Persiapan',k:'var(--c0)',d:'var(--d0)'},{n:'Boot',k:'var(--c1)',d:'var(--d1)'},{n:'Windows Setup',k:'var(--c2)',d:'var(--d2)'},{n:'Pengaturan awal',k:'var(--c3)',d:'var(--d3)'},{n:'Pascainstalasi',k:'var(--c4)',d:'var(--d4)'}];
+var BN=['Windows Boot Manager (Hard Disk)','DVD-ROM Drive','USB Flashdisk (Removable)'];
+var uname='',snd=false,ready=false,rate=1,c=0,on=true,sel=-1,bo=[0,1,2],tm=null,err=0,t0=Date.now(),done=false,tok=0,voice=null,AC=null,rq=null,cur=null;
+var SYN=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window);
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var RQ='<div class="rq">'+[['R','RAM','Minimal 4 GB','PC ini 8 GB','#2563eb'],['S','Penyimpanan','Minimal 64 GB','PC ini 256 GB','#7c3aed'],['T','TPM','Wajib versi 2.0','PC ini 2.0 aktif','#db2777'],['U','Firmware','UEFI + Secure Boot','PC ini sesuai','#0d9488']].map(function(r){return '<div><i style="--k:'+r[4]+'">'+r[0]+'</i><p style="margin:0"><b>'+r[2]+'</b><span>'+r[1]+' &middot; '+r[3]+' &#10003;</span></p></div>'}).join('')+'</div>';
+var HID=function(){return '<p class="big">Hi, '+esc(uname||'Pengguna')+'</p>'};
+var DESK=function(){
+  return '<div class="ic"><div><b style="background:#fbbf24"></b>PC ini</div><div><b style="background:#60a5fa"></b>Browser</div><div><b style="background:#34d399"></b>Berkas</div></div>'+
+  '<div class="wl"><h2>Selamat datang, '+esc(uname||'Pengguna')+'!</h2><p>Windows 11 berhasil dipasang dan PC siap dipakai.</p><ul class="ck"><li>Instalasi selesai</li><li>Pengaturan awal selesai</li><li>Pembaruan dan driver terpasang</li><li>Windows teraktivasi</li></ul></div>';
+};
+
+var S=[
+{p:0,m:'win',h:'Periksa persyaratan',b:RQ+'<p class="sm">Syarat lain: prosesor 64-bit, 1 GHz, minimal 2 inti. PC ini memenuhi semua syarat Windows 11.</p>',n:'Lanjut',g:'Mari mulai. Windows 11 punya syarat minimum: RAM 4 giga, penyimpanan 64 giga, TPM versi 2.0, serta firmware UEFI dengan Secure Boot. PC ini punya RAM 8 giga dan penyimpanan 256 giga, jadi semua syarat terpenuhi. Klik Lanjut.',y:'Angka 4 giga dan 64 giga adalah batas minimum, sedangkan PC ini lebih besar dari itu. Secure Boot hanya bisa dipakai bila komputer memakai UEFI. Kalau ada syarat yang tidak terpenuhi, Windows Setup menolak memasang Windows 11, jadi selalu cek dulu.'},
+{p:0,m:'win',h:'Unduh Windows 11',b:'<p class="sm">Situs resmi Microsoft (contoh simulasi). Pilih berkas untuk membuat media instalasi.</p>',o:['Panduan_Pengguna.pdf','*Win11_Indonesian_x64.iso','Wallpaper_Biru.jpg'],n:'Download',t:'Itu bukan berkas instalasi. Cari berkas yang berakhiran titik iso.',g:'Langkah pertama adalah menyiapkan berkas instalasi. Pilih berkas yang berakhiran iso, lalu klik Download.',y:'ISO adalah citra cakram, yaitu salinan utuh isi cakram instalasi Windows dalam satu berkas. Unduh hanya dari situs resmi supaya berkasnya aman.'},
+{p:0,m:'win',x:'usb',h:'Unduhan selesai',b:'<p>Berkas Win11_Indonesian_x64.iso (6,2 GB) sudah tersimpan di komputer.</p><p class="sm">Langkah berikutnya: colokkan flashdisk ke port USB.</p>',g:'Sekarang colokkan flashdisk kosong ke komputer. Seret flashdisk berwarna oranye ke port USB yang menyala di casing PC. Di layar sentuh, ketuk flashdisk saja.',y:'Flashdisk ini sebaiknya berkapasitas minimal 8 giga. Isinya akan dihapus saat dibuat menjadi flashdisk bootable.'},
+{p:0,m:'win',h:'Rufus: pengaturan flashdisk',b:'<div class="f"><span>Device</span><b>USB-FLASH (E:) 16 GB</b></div><div class="f"><span>Boot selection</span><b>Win11_Indonesian_x64.iso</b></div><p class="sm" style="margin:8px 0 0">Partition scheme (komputer ini memakai UEFI):</p>',o:['MBR','*GPT'],n:'START',t:'Komputer dengan UEFI memakai skema GPT. Pilih GPT.',g:'Rufus terbuka dan sudah mendeteksi flashdisk serta berkas ISO. Untuk komputer UEFI, pilih Partition scheme GPT, lalu klik START.',y:'MBR dipakai untuk BIOS lama. Dengan GPT, Target system otomatis menjadi UEFI dan file system FAT32, sesuai kebutuhan komputer ini.'},
+{p:0,m:'win',h:'WARNING',b:'<p>ALL DATA ON DEVICE USB-FLASH (E:) WILL BE DESTROYED.</p><p class="sm">Pastikan flashdisk tidak berisi data penting. Tekan OK untuk melanjutkan.</p>',n:'OK',g:'Muncul peringatan bahwa seluruh data di flashdisk akan terhapus. Pastikan tidak ada data penting, lalu klik OK.',y:'Rufus memformat flashdisk lebih dulu sebelum menyalin berkas instalasi, karena itu isi lamanya hilang.'},
+{p:0,m:'win',h:'Rufus',au:5200,l:['Formatting FAT32','Copying ISO files','Making flashdisk bootable','READY'],g:'Rufus sedang membuat flashdisk bootable. Tunggu sampai tulisan READY muncul.',y:'Rufus menyalin isi ISO ke flashdisk dan menandainya supaya firmware komputer bisa memulai sistem dari sana.'},
+{p:0,m:'win',h:'Flashdisk bootable siap',b:'<p>Rufus selesai. Flashdisk sudah bisa dipakai untuk memasang Windows 11.</p><p class="sm">Untuk simulasi, komputer ini dipakai sebagai komputer yang akan diinstal. Flashdisk tetap terpasang.</p>',n:'Shut down',g:'Flashdisk bootable sudah jadi. Sekarang matikan komputer. Klik Shut down.',y:'Komputer harus dimatikan dulu, lalu dinyalakan lagi untuk masuk ke BIOS dan memulai dari flashdisk.'},
+{p:1,off:1,x:'pwr',g:'Komputer sudah mati dan flashdisk masih terpasang. Tekan tombol power yang bulat di casing PC untuk menyalakannya.',y:'Begitu menyala, layar menampilkan tulisan awal dari BIOS. Di sinilah kita punya waktu singkat untuk masuk ke pengaturan.'},
+{p:1,m:'post',b:'<span class="logo">ACME BIOS</span><p>Memory Test: 8192 MB OK</p><p>USB Flashdisk terdeteksi</p><p style="margin:14px 0 0">Press <b>DEL</b> to enter Setup</p>',o:['Ctrl + Alt + Tab','*Del','Caps Lock','Alt + F4'],n:'Tekan tombol',t:'Kombinasi itu tidak membuka BIOS. Baca tulisan di layar: Press DEL to enter Setup.',g:'Layar awal komputer muncul. Baca tulisan di layar untuk tahu tombol masuk BIOS. Di sini tertulis Press Del. Pilih tombol Del, lalu klik Tekan tombol. Di komputer asli, tombolnya ditekan cepat sebelum komputer lanjut.',y:'Tombol masuk BIOS berbeda tiap merek, misalnya Del, F2, F10, atau F12. Tombol harus ditekan tepat saat komputer baru menyala.'},
+{p:1,m:'bios',tab:0,x:'tabboot',h:'System Information',b:'<div class="f"><span>BIOS Version</span><b>ACME 2.10</b></div><div class="f"><span>Processor</span><b>64-bit, 4 cores</b></div><div class="f"><span>Memory</span><b>8192 MB</b></div><div class="f"><span>Storage</span><b>SSD 256 GB</b></div><p class="sm">Panah kiri dan kanan: pindah menu</p>',g:'Kamu berhasil masuk ke BIOS. Ini halaman Main yang berisi informasi komputer. Di komputer asli, pindah menu memakai tombol panah kanan. Di simulasi, klik tab Boot.',y:'Menu Boot adalah tempat mengatur urutan perangkat yang dibaca lebih dulu. Menu lain seperti Advanced dan Security punya fungsi berbeda, jadi jangan diubah sembarangan.'},
+{p:1,m:'bios',tab:2,x:'boot',h:'Boot Option Priorities',b:'<div class="f"><span>Boot Mode</span><b>UEFI</b></div><div class="f"><span>Secure Boot</span><b>Enabled</b></div>',n:'F10 Simpan dan Keluar',g:'Ini menu Boot. Boot Mode sudah UEFI dan Secure Boot aktif, sesuai syarat Windows 11. Pindahkan USB Flashdisk ke urutan pertama dengan tombol segitiga naik. Setelah itu klik F10 Simpan dan Keluar.',y:'Komputer membaca perangkat sesuai urutan, jadi flashdisk harus berada paling atas supaya Windows Setup yang dibuka lebih dulu. Secure Boot hanya tersedia di firmware UEFI, bukan BIOS Legacy.'},
+{p:1,m:'bios',tab:4,h:'Save &amp; Exit',b:'<p>Save configuration and reset?</p>',o:['*Yes','No'],n:'Enter',t:'Pilih Yes supaya urutan boot yang baru tersimpan. Kalau memilih No, pengaturan kembali seperti semula.',g:'Muncul kotak konfirmasi: Save configuration and reset. Pilih Yes, lalu klik Enter.',y:'Perubahan di BIOS baru berlaku setelah disimpan. Komputer akan restart otomatis.'},
+{p:1,m:'post',b:'<span class="logo">ACME BIOS</span>',au:2800,l:['Saving configuration...','Restarting...'],g:'Komputer menyimpan pengaturan lalu restart sendiri. Tunggu sebentar.',y:'Jangan menekan tombol power selama proses ini.'},
+{p:1,m:'post',b:'<span class="logo">ACME BIOS</span><p>Boot Mode: UEFI</p><p>Boot device: USB Flashdisk</p><p style="margin:14px 0 0">Press any key to boot from USB...</p>',o:['*Tekan sembarang tombol, misalnya Spasi','Biarkan saja'],n:'OK',t:'Kalau dibiarkan, komputer melewati flashdisk dan masuk ke Windows lama. Tekan sembarang tombol.',g:'Komputer sekarang membaca flashdisk. Muncul tulisan Press any key to boot from USB. Pilih tekan sembarang tombol, lalu klik OK.',y:'Waktunya singkat. Kalau tidak ada tombol yang ditekan, komputer lanjut ke Windows lama di hard disk.'},
+{p:1,m:'loading',b:'<div class="wlogo"></div>',au:3200,l:['Windows is loading files...','Starting Windows Setup...'],g:'Flashdisk berhasil dibaca. Windows sedang memuat berkas instalasi. Tunggu sebentar.',y:'Sebentar lagi layar Windows Setup muncul. Itu tanda komputer berhasil memulai dari flashdisk.'},
+{p:2,m:'setup',h:'Windows Setup',b:'<div class="f"><span>Language to install</span><b>English (United States)</b></div><div class="f"><span>Time and currency format</span><b>Indonesian (Indonesia)</b></div><div class="f"><span>Keyboard or input method</span><b>US</b></div>',n:'Next',g:'Windows Setup terbuka. Bahasa, format waktu, dan keyboard sudah terisi. Klik Next.',y:'Bagian ini mengatur bahasa yang dipakai selama proses instalasi.'},
+{p:2,m:'setup',h:'Windows 11',b:'<p style="font-size:30px;margin-top:46px;text-align:center">Install now</p><p class="sm" style="text-align:center">Repair your computer dipakai untuk memperbaiki Windows, bukan instalasi baru.</p>',n:'Install now',g:'Klik Install now untuk memulai instalasi baru.',y:'Tombol Repair your computer hanya untuk memperbaiki Windows yang rusak.'},
+{p:2,m:'setup',h:'Activate Windows',b:'<p>Masukkan product key atau lewati dulu.</p>',o:['*I don’t have a product key','Enter product key'],n:'Next',t:'Pilih I don’t have a product key. Aktivasi dapat dilakukan setelah instalasi.',g:'Pilih I don’t have a product key, lalu klik Next.',y:'Aktivasi Windows dapat dilakukan nanti, setelah instalasi selesai.'},
+{p:2,m:'setup',h:'License terms',b:'<p class="sm">Syarat lisensi perangkat lunak Microsoft berlaku untuk Windows 11. Dengan melanjutkan, kamu menyetujui syarat tersebut.</p>',o:['*I accept the license terms'],n:'Next',t:'Pilih persetujuan lisensi dulu.',g:'Pilih I accept the license terms, lalu klik Next.',y:'Instalasi tidak dapat dilanjutkan tanpa menerima syarat lisensi.'},
+{p:2,m:'setup',h:'Which type of installation do you want?',o:['Upgrade: Install Windows and keep files, settings, and applications','*Custom: Install Windows only (advanced)'],n:'Next',t:'Pilih Custom untuk instalasi bersih. Upgrade hanya bisa dari Windows yang sedang berjalan.',g:'Pilih Custom: Install Windows only. Lalu klik Next.',y:'Instalasi bersih pada komputer baru memakai Custom. Upgrade hanya bisa dijalankan dari dalam Windows.'},
+{p:2,m:'setup',h:'Where do you want to install Windows 11?',b:'<p class="sm">Opsi di bawah layar: Delete menghapus partisi beserta seluruh datanya, New membuat partisi dari ruang kosong, Format mengosongkan partisi.</p>',o:['Drive 0 Partition 1: System Reserved, 500 MB','*Drive 0 Partition 2: Primary, 100.0 GB (berisi data lama)','Drive 1 Partition 1: USB Installer, 14.8 GB'],n:'Delete',t:'Pilih partisi lama berisi data di Drive 0 Partition 2, lalu Delete. Jangan hapus System Reserved atau flashdisk instalasi.',g:'Hard disk ini masih punya partisi lama berisi data. Pastikan data pentingnya sudah dicadangkan atau backup, karena Delete menghapus partisi beserta seluruh datanya. Pilih Drive 0 Partition 2, lalu klik Delete.',y:'Data pada partisi yang dihapus atau diformat tidak bisa kembali, jadi backup wajib dilakukan sebelum langkah ini. Hasil Delete adalah ruang kosong bernama Unallocated Space.'},
+{p:2,m:'setup',h:'Where do you want to install Windows 11?',o:['Drive 0 Partition 1: System Reserved, 500 MB','*Drive 0 Unallocated Space, 100.0 GB','Drive 1 Partition 1: USB Installer, 14.8 GB'],n:'Next',t:'Pilih Drive 0 Unallocated Space. Jangan pilih flashdisk instalasi atau partisi lama.',g:'Partisi lama sudah terhapus dan menjadi ruang kosong. Pilih Drive 0 Unallocated Space yang berukuran 100 giga, lalu klik Next.',y:'Saat Next ditekan, Windows membuat partisi yang diperlukan di ruang kosong ini dan memformatnya dengan file system NTFS, yaitu file system untuk drive sistem Windows. Pada komputer UEFI, disknya memakai gaya partisi GPT.'},
+{p:2,m:'setup',h:'Installing Windows 11',au:6500,l:['Copying Windows files','Getting files ready for installation','Installing features','Installing updates','Restarting your PC'],g:'Tunggu sampai proses selesai. Komputer akan restart sendiri beberapa kali.',y:'Jangan mematikan komputer di tengah proses penyalinan, karena instalasi bisa rusak.'},
+{p:2,m:'loading',x:'eject',b:'<div class="wlogo"></div><p>Your PC will restart in a few seconds.</p>',g:'Instalasi inti selesai dan komputer akan restart. Cabut flashdisk dari port USB sekarang. Klik port USB di casing PC.',y:'Kalau flashdisk dibiarkan terpasang, komputer bisa kembali masuk ke Windows Setup. Setelah dicabut, komputer lanjut dari hard disk.'},
+{p:3,m:'oobe',h:'Is this the right country or region?',o:['Japan','*Indonesia','Brazil','Canada'],n:'Yes',t:'Komputer ini dipakai di Indonesia.',g:'Pengaturan awal dimulai. Tahap ini disebut OOBE. Pilih Indonesia, lalu klik Yes.',y:'OOBE adalah Out-of-Box Experience, yaitu pengaturan awal saat Windows pertama kali dijalankan: wilayah, keyboard, jaringan, dan akun pengguna. Wilayah mengatur format tanggal dan layanan regional.'},
+{p:3,m:'oobe',h:'Is this the right keyboard layout?',o:['*US','Japanese','German'],n:'Yes',t:'Keyboard komputer di lab umumnya berlayout US.',g:'Pilih US, lalu klik Yes.',y:'Tata letak keyboard menentukan karakter yang muncul saat mengetik.'},
+{p:3,m:'oobe',h:'Let’s connect you to a network',o:['*LAB-TKJ, sinyal kuat','Wi-Fi-Asing, terkunci'],n:'Connect',t:'Pilih jaringan yang bisa kamu pakai.',g:'Pilih jaringan LAB-TKJ, lalu klik Connect.',y:'Koneksi internet dibutuhkan untuk pembaruan dan driver.'},
+{p:3,m:'oobe',h:'Who’s going to use this device?',i:'Nama pengguna',n:'Next',g:'Ketik namamu sebagai nama pengguna, lalu klik Next. Namamu akan muncul di layar selamat datang.',y:'Akun ini menjadi akun utama di komputer.'},
+{p:3,m:'oobe',h:'Choose privacy settings for your device',b:'<p class="sm" style="color:#e6ddff">Lokasi, diagnostik, dan iklan dapat diatur sesuai kebutuhan.</p>',n:'Accept',g:'Klik Accept untuk melanjutkan.',y:'Pengaturan privasi dapat diubah lagi nanti di Settings.'},
+{p:3,m:'hi',b:HID,au:5600,l:['Kami sedang menyiapkan akunmu','Mengatur tampilan desktop','Hampir selesai'],g:function(){return 'Hai, '+(uname||'Pengguna')+'. Tunggu sebentar, Windows sedang menyiapkan akunmu.'},y:'Pengaturan awal hampir selesai, sebentar lagi desktop muncul.'},
+{p:4,m:'win',h:'Windows Update',b:'<p>Komputer siap memeriksa pembaruan.</p>',n:'Check for updates',g:'Desktop sudah tampil. Sekarang tahap pascainstalasi. Klik Check for updates.',y:'Pembaruan menutup celah keamanan dan memperbarui driver.'},
+{p:4,m:'win',h:'Windows Update',au:4800,l:['Checking for updates','Downloading updates','Installing updates'],g:'Tunggu sampai pembaruan selesai.',y:'Komputer dapat restart saat pembaruan besar.'},
+{p:4,m:'win',h:'Device Manager',o:['Audio Controller','*Network Adapter ⚠ (driver belum terpasang)','Display Adapter'],n:'Update driver',t:'Pilih perangkat yang bertanda peringatan.',g:'Satu perangkat bertanda peringatan. Pilih perangkat itu, lalu klik Update driver.',y:'Tanda peringatan berarti driver belum terpasang atau bermasalah.'},
+{p:4,m:'win',h:'Settings &gt; System &gt; Activation',b:'<p><b>Activation state: Not active</b></p><p class="sm">Windows belum diaktivasi. Aktivasi memastikan salinan Windows berlisensi dan asli. Komputer harus terhubung ke internet.</p>',n:'Activate now',g:'Terakhir, periksa aktivasi lewat Settings, lalu System, lalu Activation. Statusnya masih Not active. Klik Activate now.',y:'Saat instalasi tadi kita memilih I don’t have a product key, jadi aktivasi dilakukan sekarang.'},
+{p:5,m:'desk',fin:1,b:DESK,g:function(){return 'Selamat, '+(uname||'Pengguna')+'! Windows 11 sudah terpasang dan komputer barumu siap dipakai. Kamu sudah menyelesaikan lima tahap: persiapan, boot, Windows Setup, pengaturan awal, dan pascainstalasi.'},y:'Kamu bisa menjelajahi desktop barumu. Ketuk tombol Start untuk melihat menunya. Simulasi tidak mengulang sendiri, jadi ulangi kapan pun dengan tombol Ulangi simulasi.'}
+];
+
+/* ---------- Suara ---------- */
+function pickVoice(){
+  if(!SYN)return;
+  var vs=speechSynthesis.getVoices();
+  voice=null;
+  for(var i=0;i<vs.length;i++){if(/^id[-_]/i.test(vs[i].lang)||/^id$/i.test(vs[i].lang)){voice=vs[i];break}}
+  if(!voice)for(var j=0;j<vs.length;j++){if(/indones/i.test(vs[j].name)){voice=vs[j];break}}
+  var m=!SYN?'Browser ini tidak mendukung suara. Instruksi tetap tampil sebagai teks.':(voice?'Suara: '+voice.name+'.':'Perangkat ini belum punya suara Bahasa Indonesia. Suara bawaan dipakai dan teks tetap tampil di layar.');
+  $('vn').textContent=m;$('introNote').textContent=m;
+}
+if(SYN){pickVoice();try{speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}}else pickVoice();
+function wrap(t){return String(t).replace(/\S+/g,function(w,i){return '<span class="w" data-s="'+i+'">'+esc(w)+'</span>'})}
+function hl(id,idx){var el=$(id);if(!el)return;var hit=null,ws=el.querySelectorAll('.w');for(var i=0;i<ws.length;i++){ws[i].classList.remove('on');if(+ws[i].dataset.s<=idx)hit=ws[i]}if(hit)hit.classList.add('on')}
+function clearHL(){var a=document.querySelectorAll('.w.on');for(var i=0;i<a.length;i++)a[i].classList.remove('on')}
+function setSp(b){$('nar').classList.toggle('sp',!!b)}
+function speak(pieces){
+  tok++;var my=tok;
+  if(SYN){try{speechSynthesis.cancel()}catch(e){}}
+  clearHL();setSp(false);
+  if(!SYN||!snd||!ready)return;
+  var q=[];
+  pieces.forEach(function(p){var re=/[^.!?]+[.!?]*\s*/g,m;while((m=re.exec(p.t))){var raw=m[0],t=raw.trim();if(t)q.push({t:t,off:m.index+(raw.length-raw.replace(/^\s+/,'').length),el:p.el})}});
+  var i=0;
+  function nextU(){
+    if(my!==tok)return;
+    if(i>=q.length){setSp(false);return}
+    var it=q[i++],u=new SpeechSynthesisUtterance(it.t);
+    u.lang='id-ID';u.rate=rate;if(voice)u.voice=voice;
+    u.onstart=function(){if(my===tok)setSp(true)};
+    u.onboundary=function(ev){if(my===tok&&it.el)hl(it.el,it.off+ev.charIndex)};
+    u.onend=function(){nextU()};
+    u.onerror=function(){if(my===tok)nextU()};
+    cur=u;
+    try{speechSynthesis.speak(u)}catch(e){}
+  }
+  setTimeout(function(){if(my===tok)nextU()},70);
+}
+function narrate(){var s=S[c];speak([{el:'cap',t:val(s.g)},{el:'gy',t:val(s.y)}])}
+
+/* ---------- Efek bunyi ---------- */
+function initAudio(){try{var A=window.AudioContext||window.webkitAudioContext;if(A&&!AC)AC=new A();if(AC&&AC.state==='suspended')AC.resume()}catch(e){AC=null}}
+function tone(f,d,ty,v,at){
+  if(!snd||!AC)return;
+  try{var o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+(at||0);
+  o.type=ty||'sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v||.07,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.05)}catch(e){}
+}
+var SFX={
+  tick:function(){tone(700,.07,'triangle',.06)},
+  ok:function(){tone(523,.14,'sine',.07);tone(784,.22,'sine',.07,.1)},
+  bad:function(){tone(170,.28,'sawtooth',.04)},
+  beep:function(){tone(1000,.14,'square',.025)},
+  win:function(){[392,523,659,784,1047].forEach(function(f,i){tone(f,.55,'sine',.07,i*.13)})}
+};
+function sfx(n){if(SFX[n])SFX[n]()}
+
+/* ---------- Layar ---------- */
+function hint(m){
+  err++;sfx('bad');
+  var e=$('gh');e.textContent=m;e.hidden=false;e.classList.remove('sk');void e.offsetWidth;e.classList.add('sk');
+  speak([{el:null,t:m}]);
+}
+function clock(){var d=new Date();return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+'<br>'+d.toLocaleDateString('id-ID')}
+function scr(){
+  var s=S[c],e=$('scr');
+  $('pled').classList.toggle('on',on);$('tow').classList.toggle('on',on);
+  if(!on){e.className='scr m-off';e.innerHTML='';return}
+  e.className='scr m-'+s.m;
+  var tabs=(s.m==='bios'&&s.tab!==undefined)?'<div class="btabs" role="tablist">'+['Main','Advanced','Boot','Security','Exit'].map(function(t,i){return '<button type="button" role="tab" class="'+(i===s.tab?'s':'')+'" aria-selected="'+(i===s.tab)+'" data-a="tab" data-i="'+i+'">'+t+'</button>'}).join('')+'</div>':'';
+  var h='<div class="dlg">'+tabs+(s.h?'<h2>'+s.h+'</h2>':'')+(val(s.b)||'');
+  if(s.x==='boot')h+=bo.map(function(d,i){return '<div class="o"><span>'+(i+1)+'. '+BN[d]+'</span>'+(i?'<button class="mv" type="button" data-a="mv" data-i="'+i+'" aria-label="Naikkan '+BN[d]+'">&#9650;</button>':'')+'</div>'}).join('');
+  else if(s.o)h+=s.o.map(function(o,i){return '<button class="o'+(sel===i?' s':'')+'" type="button" data-a="pk" data-i="'+i+'">'+esc(o.replace(/^\*/,''))+'</button>'}).join('');
+  if(s.i)h+='<input class="inp" id="inp" placeholder="'+s.i+'" maxlength="24" autocomplete="off" value="'+esc(uname)+'">';
+  if(s.au)h+='<div class="pb"><i id="pbi"></i></div><p id="pl" style="text-align:center">'+s.l[0]+'</p>';
+  if(s.n)h+='<button class="nb" type="button" data-a="go">'+s.n+'</button>';
+  h+='</div>';
+  if(s.m==='desk'||s.m==='win'){
+    var st=s.fin;
+    h+=(st?'<div class="smn" id="smn" hidden><h3>Pinned</h3><div class="tiles"><div><b style="background:#60a5fa"></b>Edge</div><div><b style="background:#fbbf24"></b>Berkas</div><div><b style="background:#34d399"></b>Settings</div><div><b style="background:#f472b6"></b>Foto</div><div><b style="background:#a78bfa"></b>Kalkulator</div><div><b style="background:#22d3ee"></b>Catatan</div><div><b style="background:#fb923c"></b>Musik</div><div><b style="background:#4ade80"></b>Store</div></div><div class="sf"><span><em>'+esc((uname||'P').charAt(0).toUpperCase())+'</em>'+esc(uname||'Pengguna')+'</span><span>&#9211;</span></div></div>':'')+
+    '<div class="tbar"><button class="tst" type="button" data-a="sm" aria-label="Menu Start"></button><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><span class="clk">'+clock()+'</span></div>';
+  }
+  e.innerHTML=h;
+}
+function draw(){
+  var s=S[c];
+  clearInterval(tm);
+  on=!s.off;
+  $('gh').hidden=true;
+  var ph=PH[Math.min(s.p,4)];
+  $('bn').style.setProperty('--bnc',s.p>4?'var(--d5)':ph.d);
+  $('bt').textContent='Langkah '+(c+1)+' dari '+S.length+' · '+(s.p>4?'Selesai':ph.n);
+  $('cap').innerHTML=wrap(val(s.g));
+  $('gy').innerHTML=wrap(val(s.y));
+  var pct=Math.round(c/(S.length-1)*100);
+  var ring=$('ring');ring.style.setProperty('--pc',pct);ring.style.setProperty('--rc',s.p>4?'var(--ok)':ph.k);
+  $('pc').textContent=pct+'%';
+  $('gn').textContent='Langkah '+(c+1)+' dari '+S.length;
+  $('gn2').textContent=s.p>4?'Semua tahap selesai':'Tahap: '+ph.n;
+  $('ph').innerHTML=PH.map(function(x,i){return '<li style="--k:'+x.k+'" class="'+(i<s.p?'d':i===s.p?'n':'')+'"><i></i>'+x.n+'</li>'}).join('');
+  $('usb').classList.toggle('act',s.x==='usb');$('port').classList.toggle('act',s.x==='usb'||s.x==='eject');$('pw').classList.toggle('act',s.x==='pwr');
+  scr();
+  if(s.au){
+    var t1=Date.now();
+    tm=setInterval(function(){
+      var p=Math.min(1,(Date.now()-t1)/s.au),b=$('pbi'),l=$('pl');
+      if(b)b.style.width=(p*100)+'%';
+      if(l)l.textContent=s.l[Math.min(s.l.length-1,Math.floor(p*s.l.length))];
+      if(p>=1){clearInterval(tm);setTimeout(function(){if(S[c]===s)nx()},700)}
+    },100);
+  }
+  if(ready)narrate();
+}
+function nx(){
+  var prev=S[c];
+  clearInterval(tm);c++;sel=-1;
+  if(prev.n)sfx('ok');
+  draw();
+  if(S[c].fin)finish();
+}
+function go(){
+  var s=S[c];
+  if(s.x==='boot'&&bo[0]!==2)return hint('Pindahkan USB Flashdisk ke urutan pertama dengan tombol segitiga naik.');
+  if(s.o&&!(sel>=0&&s.o[sel].charAt(0)==='*'))return hint(s.t||'Pilih opsi yang tepat.');
+  if(s.i){var v=$('inp').value.trim();if(!v)return hint('Isi nama pengguna dulu.');uname=v}
+  nx();
+}
+function pk(i){sel=i;sfx('tick');scr()}
+function tab(i){
+  var s=S[c];
+  if(s.x==='tabboot'){if(i===2){sfx('ok');nx()}else hint('Itu bukan menu untuk mengatur urutan boot. Pilih tab Boot.')}
+  else if(i!==s.tab)hint('Tetap di menu ini dan ikuti instruksi di layar.');
+}
+function mv(i){if(i>0){var t=bo[i-1];bo[i-1]=bo[i];bo[i]=t;sfx('tick');scr()}}
+
+/* ---------- Layar akhir ---------- */
+function confetti(){
+  if(rm)return;
+  var box=$('cf'),cols=['#2563eb','#7c3aed','#db2777','#f59e0b','#0d9488','#22d3ee'],h='';
+  for(var i=0;i<70;i++){h+='<i style="left:'+(Math.random()*100)+'%;background:'+cols[i%cols.length]+';--d:'+(2.4+Math.random()*2.2)+'s;--dl:'+(Math.random()*.9)+'s;--r:'+Math.round(Math.random()*720-360)+'deg"></i>'}
+  box.innerHTML=h;
+  setTimeout(function(){box.innerHTML=''},6000);
+}
+function finish(){
+  done=true;
+  sfx('win');confetti();
+  var sec=Math.max(1,Math.round((Date.now()-t0)/1000)),mm=Math.floor(sec/60),ss=sec%60;
+  var nm=esc(uname||'Pengguna'),rate2=err===0?'Sempurna, tanpa salah langkah':(err<=3?'Bagus sekali':'Terus berlatih, kamu pasti makin lancar');
+  var f=$('fin');
+  f.innerHTML='<h2>Selamat, '+nm+'!</h2><p>Windows 11 sudah terpasang di komputer barumu.</p><span class="badge">'+rate2+'</span>'+
+  '<div class="st"><div><b>'+mm+':'+(ss<10?'0':'')+ss+'</b><span>Waktu</span></div><div><b>'+err+'</b><span>Salah langkah</span></div><div><b>5/5</b><span>Tahap selesai</span></div></div>'+
+  '<div class="chips">'+PH.map(function(x){return '<span style="--k:'+x.k+'">&#10003; '+x.n+'</span>'}).join('')+'</div>'+
+  '<div class="ctl" style="margin-top:16px"><button class="pbtn" type="button" data-a="again">Ulangi simulasi</button><button class="obtn" type="button" data-a="rep2">Dengarkan lagi</button></div>';
+  f.hidden=false;
+  if(window.innerWidth<=900){try{f.scrollIntoView({behavior:rm?'auto':'smooth',block:'nearest'})}catch(e){}}
+}
+function reset(){
+  clearInterval(tm);clearTimeout(rq);
+  c=0;on=true;sel=-1;bo=[0,1,2];err=0;done=false;uname='';t0=Date.now();
+  var u=$('usb');u.classList.remove('in','dg');u.style.cssText='';
+  ['port','pled','tow'].forEach(function(i){$(i).classList.remove('pl','on')});
+  $('fin').hidden=true;$('cf').innerHTML='';
+  $('rst').textContent='Mulai ulang';
+  draw();
+}
+
+/* ---------- Seret flashdisk ---------- */
+var U=$('usb'),SC=$('sc'),dg=null;
+function plug(){
+  if(S[c].x!=='usb')return hint('Belum waktunya memasang flashdisk. Ikuti instruksi di layar monitor.');
+  var r=$('port').getBoundingClientRect(),q=SC.getBoundingClientRect();
+  U.classList.remove('dg');U.style.left=(r.left-q.left+r.width/2-50)+'px';U.style.top=(r.top-q.top+r.height/2-19)+'px';U.style.bottom='auto';
+  $('port').classList.add('pl');sfx('ok');
+  setTimeout(function(){U.classList.add('in')},350);setTimeout(nx,1000);
+}
+function back(){U.classList.remove('dg');U.style.left='';U.style.top='';U.style.bottom=''}
+U.addEventListener('pointerdown',function(e){
+  if(U.classList.contains('in'))return;
+  var q=SC.getBoundingClientRect();
+  dg={x:e.clientX,y:e.clientY,mv:0,ox:e.clientX-q.left-U.offsetLeft,oy:e.clientY-q.top-U.offsetTop};
+  try{U.setPointerCapture(e.pointerId)}catch(x){}
+});
+U.addEventListener('pointermove',function(e){
+  if(!dg)return;
+  if(Math.abs(e.clientX-dg.x)+Math.abs(e.clientY-dg.y)>6)dg.mv=1;
+  if(!dg.mv)return;
+  var q=SC.getBoundingClientRect();
+  U.classList.add('dg');U.style.bottom='auto';U.style.left=(e.clientX-q.left-dg.ox)+'px';U.style.top=(e.clientY-q.top-dg.oy)+'px';
+});
+U.addEventListener('pointerup',function(e){
+  if(!dg)return;
+  var m=dg.mv;dg=null;
+  if(!m)return plug();
+  var r=$('tow').getBoundingClientRect(),p=24;
+  if(e.clientX>r.left-p&&e.clientX<r.right+p&&e.clientY>r.top-p&&e.clientY<r.bottom+p)plug();
+  else{back();hint('Seret flashdisk ke casing PC di sebelah kanan, ke arah port USB yang menyala.')}
+});
+U.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();plug()}});
+$('pw').addEventListener('click',function(){
+  var x=S[c].x;
+  if(x==='pwr'){on=true;sfx('beep');$('pled').classList.add('on');$('tow').classList.add('on');nx()}
+  else if(x==='usb')hint('Colokkan flashdisk dulu ke port USB, baru tekan power.');
+  else hint(on?'PC sudah menyala.':'Belum waktunya. Ikuti instruksi di layar.');
+});
+$('port').addEventListener('click',function(){
+  var x=S[c].x;
+  if(x==='eject'){
+    $('port').classList.remove('pl');
+    U.classList.remove('in','dg');U.style.cssText='';
+    sfx('ok');nx();
+  }else if(x==='usb')hint('Seret flashdisk ke port USB ini, jangan diklik.');
+});
+
+/* ---------- Kontrol ---------- */
+$('scr').addEventListener('click',function(e){
+  var t=e.target.closest('[data-a]');if(!t)return;
+  var a=t.dataset.a;
+  if(a==='pk')pk(+t.dataset.i);
+  else if(a==='mv')mv(+t.dataset.i);
+  else if(a==='tab')tab(+t.dataset.i);
+  else if(a==='go')go();
+  else if(a==='sm'){var m=$('smn');if(m){m.hidden=!m.hidden;sfx('tick')}}
+});
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target&&e.target.id==='inp'){e.preventDefault();go()}});
+$('fin').addEventListener('click',function(e){
+  var t=e.target.closest('[data-a]');if(!t)return;
+  if(t.dataset.a==='again')reset();
+  else if(t.dataset.a==='rep2'){if(!snd)setSnd(true);narrate()}
+});
+function setSnd(b){
+  snd=b;
+  $('snd').textContent='Suara: '+(snd?'aktif':'mati');
+  $('snd').setAttribute('aria-pressed',String(snd));
+  if(snd)initAudio();else{tok++;if(SYN){try{speechSynthesis.cancel()}catch(e){}}setSp(false);clearHL()}
+}
+$('snd').addEventListener('click',function(){setSnd(!snd);if(snd&&ready)narrate()});
+$('rep').addEventListener('click',function(){if(!snd)setSnd(true);narrate()});
+Array.prototype.forEach.call(document.querySelectorAll('.spd button'),function(b){
+  b.addEventListener('click',function(){
+    rate=parseFloat(b.dataset.r);
+    Array.prototype.forEach.call(document.querySelectorAll('.spd button'),function(x){x.setAttribute('aria-pressed',String(x===b))});
+    if(snd&&ready)narrate();
+  });
+});
+function begin(withSound){
+  ready=true;setSnd(withSound);initAudio();
+  $('intro').hidden=true;t0=Date.now();
+  if(withSound)sfx('ok');
+  narrate();
+}
+$('go1').addEventListener('click',function(){begin(true)});
+$('go0').addEventListener('click',function(){begin(false)});
+$('rst').addEventListener('click',function(){
+  if(done||c<2)return reset();
+  var b=$('rst');
+  if(b.dataset.arm){clearTimeout(rq);b.dataset.arm='';return reset()}
+  b.dataset.arm='1';b.textContent='Yakin, mulai ulang';
+  rq=setTimeout(function(){b.dataset.arm='';b.textContent='Mulai ulang'},3000);
+});
+
+/* ---------- Skala layar dan kemiringan 3D ---------- */
+function fit(){var k=$('scrw').clientWidth/640;$('scr').style.setProperty('--k',k);$('scrw').style.height=(420*k)+'px'}
+var lw=0;
+if('ResizeObserver' in window)new ResizeObserver(function(){requestAnimationFrame(function(){var w=$('scrw').clientWidth;if(w!==lw){lw=w;fit()}})}).observe($('scrw'));
+window.addEventListener('resize',fit);
+var rig=$('rig');
+SC.addEventListener('pointermove',function(e){
+  if(rm||dg)return;
+  var r=SC.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+  rig.style.transform='rotateX('+(4-y*8)+'deg) rotateY('+(-5+x*12)+'deg)';
+});
+SC.addEventListener('pointerleave',function(){rig.style.transform=''});
+fit();draw();
+})();
+</script>
+</body></html>
